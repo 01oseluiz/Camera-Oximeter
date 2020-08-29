@@ -1,0 +1,12 @@
+{
+  "name": "Camera Oximeter",
+  "displayName": "Camera Oximeter",
+  "expo": {
+    "name": "Camera Oximeter",
+    "slug": "Camera Oximeter",
+    "version": "1.0.0",
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  }
+}
