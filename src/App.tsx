@@ -7,6 +7,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 
 // Application pages
 import Home from './pages/Home';
+import Oximeter from './pages/Oximeter';
 
 const AppStack = createStackNavigator();
 
@@ -19,6 +20,7 @@ const App : React.FC = () => (
       screenOptions={{ headerShown: false }}
     >
       <AppStack.Screen name="Home" component={Home} />
+      <AppStack.Screen name="Oximeter" component={Oximeter} />
     </AppStack.Navigator>
   </NavigationContainer>
 );
