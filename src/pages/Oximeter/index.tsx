@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Text, View, TouchableOpacity } from 'react-native';
+
 import { Camera } from 'expo-camera';
+import { setStatusBarHidden } from 'expo-status-bar';
+
+import Icon from '../../components/Icon';
 
 const Oximeter : React.FC = () => {
   const [hasPermission, setHasPermission] = useState(false);
   const [type, setType] = useState(Camera.Constants.Type.back);
+
+  setStatusBarHidden(true, 'slide');
 
   useEffect(() => {
     (async () => {
@@ -41,7 +47,7 @@ const Oximeter : React.FC = () => {
               );
             }}
           >
-            <Text style={{ fontSize: 18, marginBottom: 10, color: 'white' }}> Flip </Text>
+            <Icon iconPackage="Fontisto" name="arrow-swap" size={24} color="white" />
           </TouchableOpacity>
         </View>
       </Camera>
