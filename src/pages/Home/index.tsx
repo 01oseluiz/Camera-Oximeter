@@ -45,11 +45,10 @@ const Home : React.FC = () => {
         }}
         asyncAction
         callback={async () => {
-          await new Promise((res) => setTimeout(res, 10000));
           navigation.navigate('Oximeter');
         }}
       >
-        <Icon iconPackage="AntDesign" name="windows" size={18} color={Theme.colors.light} />
+        <Icon iconPackage="AntDesign" name="camera" size={18} color={Theme.colors.light} />
         <Label styles={{ fontSize: '18px', color: 'black' }}>Iniciar</Label>
       </AsyncButton>
     </View>
