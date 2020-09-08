@@ -2,16 +2,21 @@ import React, { useState } from 'react';
 
 import { ActivityIndicator, GestureResponderEvent } from 'react-native';
 import { Button, ButtonType } from './styles';
+import { Theme } from '../../constants';
 
 interface IButtonProps extends ButtonType {
   children: React.ReactNode,
   asyncAction: boolean,
   callback: <GestureResponderEvent>(arg: GestureResponderEvent) => void,
+  activityIndicator?: Record<string, unknown>,
+  styles?: Record<string, unknown>,
 }
 
 const AsyncButton : React.FC<IButtonProps> = (props : IButtonProps) => {
   const [disabled, setDisabled] = useState(false);
-  const { children, asyncAction, callback } = props;
+  const {
+    activityIndicator, asyncAction, children, callback, styles,
+  } = props;
 
   let onPressCallback;
   if (asyncAction) {
@@ -28,12 +33,31 @@ const AsyncButton : React.FC<IButtonProps> = (props : IButtonProps) => {
     <Button
       onPress={onPressCallback}
       disabled={disabled}
-      {...props}
+      {...styles}
     >
-      {(asyncAction && disabled) && <ActivityIndicator />}
+      {(asyncAction && disabled) && <ActivityIndicator {...activityIndicator} />}
       {children}
     </Button>
   );
+};
+
+AsyncButton.defaultProps = {
+  activityIndicator: {
+    size: 'small',
+    color: Theme.colors.light,
+  },
+  styles: {
+    flexDirection: 'row',
+    backgroundColor: Theme.colors.primary,
+    marginTop: '0px',
+    marginBottom: '0px',
+    marginLeft: '0px',
+    marginRight: '0px',
+    borderRadius: '0px',
+    alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 };
 
 export default AsyncButton;

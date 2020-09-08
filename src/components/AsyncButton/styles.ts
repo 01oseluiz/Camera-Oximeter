@@ -4,10 +4,10 @@ import { TouchableOpacityProps } from 'react-native';
 import { Theme } from '../../constants';
 
 export interface ButtonType extends TouchableOpacityProps {
-  flex: number,
+  flex?: number,
   flexDirection?: string,
-  width: string,
-  height: string,
+  width?: string,
+  height?: string,
   backgroundColor?: string,
   marginTop?: string,
   marginBottom?: string,
@@ -36,7 +36,10 @@ export const Button = styled.TouchableOpacity<ButtonType>`
 `;
 
 Button.defaultProps = {
+  flex: 1,
   flexDirection: 'row',
+  width: '40%',
+  height: '35px',
   backgroundColor: Theme.colors.primary,
   marginTop: '0px',
   marginBottom: '0px',

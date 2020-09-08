@@ -10,6 +10,7 @@ import { setStatusBarHidden } from 'expo-status-bar';
 import AsyncButton from '../../components/AsyncButton';
 import Icon from '../../components/Icon';
 import Label from '../../components/Label';
+import { Theme } from '../../constants';
 
 const styles = StyleSheet.create({
   container: {
@@ -31,18 +32,25 @@ const Home : React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Label>Bora bora no App de Embarcados</Label>
+      <Label styles={{ color: Theme.colors.blue }}>App de Embarcados</Label>
       <AsyncButton
-        flex={1}
-        width="35%"
-        height="22px"
+        styles={{
+          flex: 1,
+          width: '35%',
+          height: '32px',
+        }}
+        activityIndicator={{
+          size: 'small',
+          color: Theme.colors.light,
+        }}
         asyncAction
         callback={async () => {
           await new Promise((res) => setTimeout(res, 10000));
           navigation.navigate('Oximeter');
         }}
       >
-        <Text style={{ fontSize: 18, marginBottom: 10, color: 'black' }}> Iniciar </Text>
+        <Icon iconPackage="AntDesign" name="windows" size={18} color={Theme.colors.light} />
+        <Label styles={{ fontSize: '18px', color: 'black' }}>Iniciar</Label>
       </AsyncButton>
     </View>
   );

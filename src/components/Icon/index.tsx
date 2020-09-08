@@ -53,7 +53,6 @@ const Icon : React.FC<IIconProps> = (props) => {
       return <Zocial {...props} />;
     default:
       return <MaterialCommunityIcons {...props} />;
-      break;
   }
 };
 
