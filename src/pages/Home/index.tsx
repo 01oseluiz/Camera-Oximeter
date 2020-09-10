@@ -1,25 +1,15 @@
 import React, { useEffect } from 'react';
 
-import {
-  StyleSheet, Text, View,
-} from 'react-native';
-
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { setStatusBarHidden } from 'expo-status-bar';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import AsyncButton from '../../components/AsyncButton';
 import Icon from '../../components/Icon';
 import Label from '../../components/Label';
 import { Theme } from '../../constants';
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+import { PageContainer } from './styles';
 
 const Home : React.FC = () => {
   const navigation = useNavigation();
@@ -31,7 +21,18 @@ const Home : React.FC = () => {
   }, [isFocused]);
 
   return (
-    <View style={styles.container}>
+    <PageContainer>
+      {/* Page background */}
+      <LinearGradient
+        colors={['transparent', Theme.colors.secondary]}
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: 610,
+        }}
+      />
       <Label styles={{ color: Theme.colors.blue }}>App de Embarcados</Label>
       <AsyncButton
         styles={{
@@ -51,7 +52,7 @@ const Home : React.FC = () => {
         <Icon iconPackage="AntDesign" name="camera" size={18} color={Theme.colors.light} />
         <Label styles={{ fontSize: '18px', color: 'black' }}>Iniciar</Label>
       </AsyncButton>
-    </View>
+    </PageContainer>
   );
 };
 

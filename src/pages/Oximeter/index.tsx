@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Text, View, TouchableOpacity } from 'react-native';
 
-import { Camera } from 'expo-camera';
+import { Camera, FaceDetectionResult } from 'expo-camera';
 import { setStatusBarHidden } from 'expo-status-bar';
+import * as FaceDetector from 'expo-face-detector';
 
 import Icon from '../../components/Icon';
 
@@ -25,7 +26,24 @@ const Oximeter : React.FC = () => {
 
   return (
     <View style={{ flex: 1 }}>
-      <Camera style={{ flex: 1 }} type={type} ratio="16:9">
+      <Camera
+        style={{ flex: 1 }}
+        type={type}
+        ratio="16:9"
+        onFacesDetected={
+          (event: FaceDetectionResult) => {
+            console.log(event);
+          }
+        }
+        faceDetectorSettings={{
+          mode: FaceDetector.Constants.Mode.fast,
+          detectLandmarks: FaceDetector.Constants.Landmarks.none,
+          runClassifications: FaceDetector.Constants.Classifications.none,
+          minDetectionInterval: 100,
+          tracking: true,
+        }}
+
+      >
         <View
           style={{
             flex: 1,
