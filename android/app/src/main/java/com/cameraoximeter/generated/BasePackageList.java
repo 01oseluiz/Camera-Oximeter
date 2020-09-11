@@ -10,6 +10,7 @@ public class BasePackageList {
         new expo.modules.camera.CameraPackage(),
         new expo.modules.constants.ConstantsPackage(),
         new expo.modules.errorrecovery.ErrorRecoveryPackage(),
+        new expo.modules.facedetector.FaceDetectorPackage(),
         new expo.modules.filesystem.FileSystemPackage(),
         new expo.modules.font.FontLoaderPackage(),
         new expo.modules.imageloader.ImageLoaderPackage(),

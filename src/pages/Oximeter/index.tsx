@@ -10,6 +10,7 @@ import Icon from '../../components/Icon';
 const Oximeter : React.FC = () => {
   const [hasPermission, setHasPermission] = useState(false);
   const [type, setType] = useState(Camera.Constants.Type.back);
+  const [ready, setReady] = useState(false);
 
   setStatusBarHidden(true, 'slide');
 
@@ -30,19 +31,18 @@ const Oximeter : React.FC = () => {
         style={{ flex: 1 }}
         type={type}
         ratio="16:9"
-        onFacesDetected={
-          (event: FaceDetectionResult) => {
-            console.log(event);
-          }
-        }
+        pictureSize="16:9"
+        flashMode={Camera.Constants.FlashMode.auto}
+        onFacesDetected={ready ? (event: FaceDetectionResult) => {
+          console.log(event);
+        } : undefined}
         faceDetectorSettings={{
           mode: FaceDetector.Constants.Mode.fast,
-          detectLandmarks: FaceDetector.Constants.Landmarks.none,
-          runClassifications: FaceDetector.Constants.Classifications.none,
-          minDetectionInterval: 100,
+          detectLandmarks: FaceDetector.Constants.Landmarks.all,
+          runClassifications: FaceDetector.Constants.Classifications.all,
           tracking: true,
         }}
-
+        onCameraReady={() => setReady(true)}
       >
         <View
           style={{
