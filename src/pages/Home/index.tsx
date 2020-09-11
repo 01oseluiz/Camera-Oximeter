@@ -33,24 +33,26 @@ const Home : React.FC = () => {
           height: 610,
         }}
       />
-      <Label styles={{ color: Theme.colors.blue }}>App de Embarcados</Label>
+      <Label styles={{ color: Theme.colors.dark, fontSize: '20px' }}>App de Embarcados</Label>
       <AsyncButton
         styles={{
           flex: 1,
           width: '35%',
           height: '32px',
+          color: Theme.colors.success,
+          borderRadius: '5px',
         }}
         activityIndicator={{
           size: 'small',
           color: Theme.colors.light,
         }}
-        asyncAction
-        callback={async () => {
+        asyncAction={false}
+        callback={() => {
           navigation.navigate('Oximeter');
         }}
       >
-        <Icon iconPackage="AntDesign" name="camera" size={18} color={Theme.colors.light} />
-        <Label styles={{ fontSize: '18px', color: 'black' }}>Iniciar</Label>
+        <Icon iconPackage="AntDesign" name="camera" size={22} color={Theme.colors.light} />
+        <Label styles={{ marginLeft: '5px', fontSize: '22px', color: Theme.colors.light }}>Iniciar</Label>
       </AsyncButton>
     </PageContainer>
   );
