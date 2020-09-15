@@ -1,4 +1,4 @@
-import styled, { css } from 'styled-components/native';
+import styled from 'styled-components/native';
 import { ViewProps } from 'react-native';
 
 export const PageContainer = styled.View<ViewProps>`

@@ -36,7 +36,7 @@ const AsyncButton : React.FC<IButtonProps> = (props : IButtonProps) => {
       {...styles}
     >
       {(asyncAction && disabled) && <ActivityIndicator {...activityIndicator} />}
-      {children}
+      {!(asyncAction && disabled) && children}
     </Button>
   );
 };

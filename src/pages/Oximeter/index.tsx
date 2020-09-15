@@ -1,16 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 
 import { Camera, FaceDetectionResult } from 'expo-camera';
-import { setStatusBarHidden } from 'expo-status-bar';
 import * as FaceDetector from 'expo-face-detector';
+import { LinearGradient } from 'expo-linear-gradient';
+import { setStatusBarHidden } from 'expo-status-bar';
 
+import { useNavigation } from '@react-navigation/native';
+
+import AsyncButton from '../../components/AsyncButton';
 import Icon from '../../components/Icon';
+import Label from '../../components/Label';
+
+// Styled components
+import { CameraContainer, PermissionContainer, PermissionText } from './styles';
+import { Theme } from '../../constants';
 
 const Oximeter : React.FC = () => {
   const [hasPermission, setHasPermission] = useState(false);
   const [type, setType] = useState(Camera.Constants.Type.back);
   const [ready, setReady] = useState(false);
+
+  const navigation = useNavigation();
 
   setStatusBarHidden(true, 'slide');
 
@@ -21,8 +32,46 @@ const Oximeter : React.FC = () => {
     })();
   }, []);
 
-  if (hasPermission === false) {
-    return <Text>No access to camera</Text>;
+  if (hasPermission !== true) {
+    return (
+      <CameraContainer>
+        <LinearGradient
+          colors={['transparent', Theme.colors.secondary]}
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 610,
+          }}
+        />
+        <PermissionContainer>
+          {hasPermission === false && <PermissionText>O aplicativo não consegue acessar a câmera</PermissionText>}
+          {hasPermission === null && <PermissionText>Solicitando permissões de câmera</PermissionText>}
+        </PermissionContainer>
+        <AsyncButton
+          styles={{
+            flex: 1,
+            width: '35%',
+            height: '32px',
+            color: Theme.colors.secondary,
+            borderRadius: '5px',
+            marginBottom: '10px',
+          }}
+          activityIndicator={{
+            size: 'small',
+            color: Theme.colors.light,
+          }}
+          asyncAction={false}
+          callback={() => {
+            navigation.navigate('Home');
+          }}
+        >
+          <Icon iconPackage="AntDesign" name="back" size={22} color={Theme.colors.light} />
+          <Label styles={{ marginLeft: '5px', fontSize: '22px', color: Theme.colors.light }}>Voltar</Label>
+        </AsyncButton>
+      </CameraContainer>
+    );
   }
 
   return (
