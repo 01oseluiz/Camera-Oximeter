@@ -5,17 +5,24 @@ import { Theme } from '../../constants';
 
 export const CameraContainer = styled.View<ViewProps>`
   flex: 1;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
+`;
+
+export const CameraOverlay = styled.View<ViewProps>`
+  flex: 1;
+  flex-direction: row;
+  background-color: transparent;
 `;
 
 export const PermissionContainer = styled.View<ViewProps>`
   flex: 1;
-  flex-direction: row;
+  flex-direction: column;
+  align-self: center;
   align-items: center;
   justify-content: center;
-  width: 70%;
+  max-width: 70%;
 `;
 
 export const PermissionText = styled.Text<TextProps>`

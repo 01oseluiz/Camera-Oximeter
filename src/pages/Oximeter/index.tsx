@@ -13,7 +13,9 @@ import Icon from '../../components/Icon';
 import Label from '../../components/Label';
 
 // Styled components
-import { CameraContainer, PermissionContainer, PermissionText } from './styles';
+import {
+  CameraContainer, CameraOverlay, PermissionContainer, PermissionText,
+} from './styles';
 import { Theme } from '../../constants';
 
 const Oximeter : React.FC = () => {
@@ -48,34 +50,34 @@ const Oximeter : React.FC = () => {
         <PermissionContainer>
           {hasPermission === false && <PermissionText>O aplicativo não consegue acessar a câmera</PermissionText>}
           {hasPermission === null && <PermissionText>Solicitando permissões de câmera</PermissionText>}
+          <AsyncButton
+            styles={{
+              flex: 1,
+              width: '70%',
+              height: '32px',
+              color: Theme.colors.secondary,
+              borderRadius: '5px',
+              marginTop: '10px',
+            }}
+            activityIndicator={{
+              size: 'small',
+              color: Theme.colors.light,
+            }}
+            asyncAction={false}
+            callback={() => {
+              navigation.navigate('Home');
+            }}
+          >
+            <Icon iconPackage="AntDesign" name="back" size={22} color={Theme.colors.light} />
+            <Label styles={{ marginLeft: '5px', fontSize: '22px', color: Theme.colors.light }}>Voltar</Label>
+          </AsyncButton>
         </PermissionContainer>
-        <AsyncButton
-          styles={{
-            flex: 1,
-            width: '35%',
-            height: '32px',
-            color: Theme.colors.secondary,
-            borderRadius: '5px',
-            marginBottom: '10px',
-          }}
-          activityIndicator={{
-            size: 'small',
-            color: Theme.colors.light,
-          }}
-          asyncAction={false}
-          callback={() => {
-            navigation.navigate('Home');
-          }}
-        >
-          <Icon iconPackage="AntDesign" name="back" size={22} color={Theme.colors.light} />
-          <Label styles={{ marginLeft: '5px', fontSize: '22px', color: Theme.colors.light }}>Voltar</Label>
-        </AsyncButton>
       </CameraContainer>
     );
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <CameraContainer>
       <Camera
         style={{ flex: 1 }}
         type={type}
@@ -93,13 +95,7 @@ const Oximeter : React.FC = () => {
         }}
         onCameraReady={() => setReady(true)}
       >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: 'transparent',
-            flexDirection: 'row',
-          }}
-        >
+        <CameraOverlay>
           <TouchableOpacity
             style={{
               flex: 0.1,
@@ -116,9 +112,9 @@ const Oximeter : React.FC = () => {
           >
             <Icon iconPackage="Fontisto" name="arrow-swap" size={24} color="white" />
           </TouchableOpacity>
-        </View>
+        </CameraOverlay>
       </Camera>
-    </View>
+    </CameraContainer>
   );
 };
 
