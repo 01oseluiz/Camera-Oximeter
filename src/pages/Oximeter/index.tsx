@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity } from 'react-native';
 
 import { Camera, FaceDetectionResult } from 'expo-camera';
 import * as FaceDetector from 'expo-face-detector';
@@ -14,15 +13,22 @@ import Label from '../../components/Label';
 
 // Styled components
 import {
-  CameraContainer, CameraOverlay, PermissionContainer, PermissionText,
+  BottomBar,
+  CameraButton,
+  CameraContainer,
+  CameraOverlay,
+  PermissionContainer,
+  PermissionText,
 } from './styles';
 import { Theme } from '../../constants';
 
 const Oximeter : React.FC = () => {
-  const [hasPermission, setHasPermission] = useState(false);
-  const [type, setType] = useState(Camera.Constants.Type.back);
-  const [ready, setReady] = useState(false);
-
+  const [camera, setCamera] = useState({
+    allowed: false,
+    ready: false,
+    flash: Camera.Constants.FlashMode.off,
+    type: Camera.Constants.Type.back,
+  });
   const navigation = useNavigation();
 
   setStatusBarHidden(true, 'slide');
@@ -30,11 +36,11 @@ const Oximeter : React.FC = () => {
   useEffect(() => {
     (async () => {
       const { status } = await Camera.requestPermissionsAsync();
-      setHasPermission(status === 'granted');
+      setCamera({ ...camera, allowed: (status === 'granted') });
     })();
   }, []);
 
-  if (hasPermission !== true) {
+  if (camera.allowed !== true) {
     return (
       <CameraContainer>
         <LinearGradient
@@ -48,8 +54,8 @@ const Oximeter : React.FC = () => {
           }}
         />
         <PermissionContainer>
-          {hasPermission === false && <PermissionText>O aplicativo não consegue acessar a câmera</PermissionText>}
-          {hasPermission === null && <PermissionText>Solicitando permissões de câmera</PermissionText>}
+          {camera.allowed === false && <PermissionText>O aplicativo não consegue acessar a câmera</PermissionText>}
+          {camera.allowed === null && <PermissionText>Solicitando permissões de câmera</PermissionText>}
           <AsyncButton
             styles={{
               flex: 1,
@@ -80,11 +86,10 @@ const Oximeter : React.FC = () => {
     <CameraContainer>
       <Camera
         style={{ flex: 1 }}
-        type={type}
+        type={camera.type}
         ratio="16:9"
-        pictureSize="16:9"
-        flashMode={Camera.Constants.FlashMode.auto}
-        onFacesDetected={ready ? (event: FaceDetectionResult) => {
+        flashMode={camera.flash}
+        onFacesDetected={camera.ready ? (event: FaceDetectionResult) => {
           console.log(event);
         } : undefined}
         faceDetectorSettings={{
@@ -93,25 +98,42 @@ const Oximeter : React.FC = () => {
           runClassifications: FaceDetector.Constants.Classifications.all,
           tracking: true,
         }}
-        onCameraReady={() => setReady(true)}
+        onCameraReady={() => setCamera({ ...camera, ready: true })}
       >
         <CameraOverlay>
-          <TouchableOpacity
-            style={{
-              flex: 0.1,
-              alignSelf: 'flex-end',
-              alignItems: 'center',
-            }}
-            onPress={() => {
-              setType(
-                type === Camera.Constants.Type.back
-                  ? Camera.Constants.Type.front
-                  : Camera.Constants.Type.back,
-              );
-            }}
-          >
-            <Icon iconPackage="Fontisto" name="arrow-swap" size={24} color="white" />
-          </TouchableOpacity>
+          <BottomBar>
+            <CameraButton
+              activeOpacity={0.8}
+              onPress={() => {
+                setCamera({
+                  ...camera,
+                  type: camera.type === Camera.Constants.Type.back
+                    ? Camera.Constants.Type.front
+                    : Camera.Constants.Type.back,
+                });
+              }}
+            >
+              <Icon iconPackage="Fontisto" name="arrow-swap" size={30} color={Theme.colors.light} />
+            </CameraButton>
+            <CameraButton
+              activeOpacity={0.8}
+            >
+              <Icon iconPackage="MaterialCommunityIcons" name="record" size={50} color={Theme.colors.light} />
+            </CameraButton>
+            <CameraButton
+              activeOpacity={0.8}
+              onPress={() => {
+                setCamera({
+                  ...camera,
+                  flash: camera.flash === Camera.Constants.FlashMode.torch
+                    ? Camera.Constants.FlashMode.off
+                    : Camera.Constants.FlashMode.torch,
+                });
+              }}
+            >
+              <Icon iconPackage="Entypo" name="flashlight" size={30} color={Theme.colors.light} />
+            </CameraButton>
+          </BottomBar>
         </CameraOverlay>
       </Camera>
     </CameraContainer>
