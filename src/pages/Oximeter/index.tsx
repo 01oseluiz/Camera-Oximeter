@@ -131,7 +131,7 @@ const Oximeter : React.FC = () => {
                 });
               }}
             >
-              <Icon iconPackage="Entypo" name="flashlight" size={30} color={Theme.colors.light} />
+              <Icon iconPackage="Entypo" name="flashlight" size={40} color={camera.flash === Camera.Constants.FlashMode.torch ? Theme.colors.blue : Theme.colors.light} />
             </CameraButton>
           </BottomBar>
         </CameraOverlay>
