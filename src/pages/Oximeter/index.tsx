@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
 
 import { Camera, FaceDetectionResult } from 'expo-camera';
 import * as FaceDetector from 'expo-face-detector';
@@ -12,15 +13,31 @@ import Icon from '../../components/Icon';
 import Label from '../../components/Label';
 
 // Styled components
-import {
-  BottomBar,
-  CameraButton,
-  CameraContainer,
-  CameraOverlay,
-  PermissionContainer,
-  PermissionText,
-} from './styles';
+import styles from './styles';
 import { Theme } from '../../constants';
+
+interface IFaceProps {
+  faceID: number,
+  bounds: {
+    origin: Record<string, number>,
+    size: Record<string, number>,
+  },
+  rollAngle: number,
+  yawAngle: number,
+  smilingProbability: number,
+  leftEarPosition: Record<string, number>,
+  rightEarPosition: Record<string, number>,
+  leftEyePosition: Record<string, number>,
+  leftEyeOpenProbability: number,
+  rightEyePosition: Record<string, number>,
+  rightEyeOpenProbability: Record<string, number>,
+  leftCheekPosition: Record<string, number>,
+  rightCheekPosition: Record<string, number>,
+  mouthPosition: Record<string, number>,
+  leftMouthPosition: Record<string, number>,
+  rightMouthPosition: Record<string, number>,
+  noseBasePosition: Record<string, number>
+}
 
 const Oximeter : React.FC = () => {
   const [camera, setCamera] = useState({
@@ -29,6 +46,7 @@ const Oximeter : React.FC = () => {
     flash: Camera.Constants.FlashMode.off,
     type: Camera.Constants.Type.back,
   });
+  const [facesDetected, setFacesDetected] = useState<IFaceProps[]>([]);
   const navigation = useNavigation();
 
   setStatusBarHidden(true, 'slide');
@@ -40,9 +58,76 @@ const Oximeter : React.FC = () => {
     })();
   }, []);
 
+  const renderFace = (face : IFaceProps) : JSX.Element => (
+    <View
+      key={face.faceID}
+      style={[
+        styles.face,
+        {
+          transform: [
+            { perspective: 600 },
+            { rotateZ: `${face.rollAngle.toFixed(0)}deg` },
+            { rotateY: `${face.yawAngle.toFixed(0)}deg` },
+          ],
+        },
+        {
+          ...face.bounds.size,
+          left: face.bounds.origin.x,
+          top: face.bounds.origin.y,
+        },
+      ]}
+    >
+      <Text style={styles.faceText}>ID: {face.faceID}</Text>
+      <Text style={styles.faceText}>rollAngle: {face.rollAngle.toFixed(0)}</Text>
+      <Text style={styles.faceText}>yawAngle: {face.yawAngle.toFixed(0)}</Text>
+      <Text style={styles.faceText}>BPM: 68</Text>
+      <Text style={styles.faceText}>Sp02: 98%</Text>
+    </View>
+  );
+
+  const renderLandmark = (face: IFaceProps) : JSX.Element => {
+    const positionLandmark = (position : Record<string, number>) : JSX.Element => position && (
+    <View
+      style={[
+        styles.landmark,
+        {
+          left: position.x - 1,
+          top: position.y - 1,
+        },
+      ]}
+    />
+    );
+    return (
+      <View key={`landmarks-${face.faceID}`}>
+        {positionLandmark(face.leftEyePosition)}
+        {positionLandmark(face.rightEyePosition)}
+        {positionLandmark(face.leftEarPosition)}
+        {positionLandmark(face.rightEarPosition)}
+        {positionLandmark(face.leftCheekPosition)}
+        {positionLandmark(face.rightCheekPosition)}
+        {positionLandmark(face.mouthPosition)}
+        {positionLandmark(face.leftMouthPosition)}
+        {positionLandmark(face.rightMouthPosition)}
+        {positionLandmark(face.noseBasePosition)}
+      </View>
+    );
+  };
+
+  const renderFaces = () : JSX.Element => (
+    <View style={styles.facesContainer} pointerEvents="none">
+      {facesDetected.map(renderFace)}
+    </View>
+  );
+
+  const renderLandmarks = () : JSX.Element => (
+    <View style={styles.facesContainer} pointerEvents="none">
+      {facesDetected.map(renderLandmark)}
+    </View>
+  );
+
   if (camera.allowed !== true) {
     return (
-      <CameraContainer>
+      <View style={styles.noPermissions}>
         <LinearGradient
           colors={['transparent', Theme.colors.secondary]}
           style={{
@@ -53,90 +138,102 @@ const Oximeter : React.FC = () => {
             height: 610,
           }}
         />
-        <PermissionContainer>
-          {camera.allowed === false && <PermissionText>O aplicativo não consegue acessar a câmera</PermissionText>}
-          {camera.allowed === null && <PermissionText>Solicitando permissões de câmera</PermissionText>}
-          <AsyncButton
-            styles={{
-              flex: 1,
-              width: '70%',
-              height: '32px',
-              color: Theme.colors.secondary,
-              borderRadius: '5px',
-              marginTop: '10px',
-            }}
-            activityIndicator={{
-              size: 'small',
-              color: Theme.colors.light,
-            }}
-            asyncAction={false}
-            callback={() => {
-              navigation.navigate('Home');
-            }}
-          >
-            <Icon iconPackage="AntDesign" name="back" size={22} color={Theme.colors.light} />
-            <Label styles={{ marginLeft: '5px', fontSize: '22px', color: Theme.colors.light }}>Voltar</Label>
-          </AsyncButton>
-        </PermissionContainer>
-      </CameraContainer>
+        {camera.allowed === false && <Text style={{ color: Theme.colors.dark }}>O aplicativo não consegue acessar a câmera</Text>}
+        {camera.allowed === null && <Text style={{ color: Theme.colors.dark }}>Solicitando permissões de câmera</Text>}
+        <AsyncButton
+          styles={{
+            flex: 1,
+            width: '70%',
+            height: '32px',
+            color: Theme.colors.secondary,
+            borderRadius: '5px',
+            marginTop: '10px',
+          }}
+          activityIndicator={{
+            size: 'small',
+            color: Theme.colors.light,
+          }}
+          asyncAction={false}
+          callback={() => {
+            navigation.navigate('Home');
+          }}
+        >
+          <Icon iconPackage="AntDesign" name="back" size={22} color={Theme.colors.light} />
+          <Label styles={{ marginLeft: '5px', fontSize: '22px', color: Theme.colors.light }}>Voltar</Label>
+        </AsyncButton>
+      </View>
     );
   }
 
   return (
-    <CameraContainer>
-      <Camera
-        style={{ flex: 1 }}
-        type={camera.type}
-        ratio="16:9"
-        flashMode={camera.flash}
-        onFacesDetected={camera.ready ? (event: FaceDetectionResult) => {
-          console.log(event);
-        } : undefined}
-        faceDetectorSettings={{
-          mode: FaceDetector.Constants.Mode.fast,
-          detectLandmarks: FaceDetector.Constants.Landmarks.all,
-          runClassifications: FaceDetector.Constants.Classifications.all,
-          tracking: true,
-        }}
-        onCameraReady={() => setCamera({ ...camera, ready: true })}
-      >
-        <CameraOverlay>
-          <BottomBar>
-            <CameraButton
-              activeOpacity={0.8}
-              onPress={() => {
-                setCamera({
-                  ...camera,
-                  type: camera.type === Camera.Constants.Type.back
-                    ? Camera.Constants.Type.front
-                    : Camera.Constants.Type.back,
-                });
-              }}
+    <View style={styles.container}>
+      <View style={{ flex: 1 }}>
+        <Camera
+          style={styles.camera}
+          type={camera.type}
+          ratio="16:9"
+          flashMode={camera.flash}
+          onFacesDetected={camera.ready ? (event: FaceDetectionResult) => {
+            if (event.faces.length > 0) {
+              setFacesDetected(event.faces);
+            } else {
+              setFacesDetected([]);
+            }
+          } : undefined}
+          faceDetectorSettings={{
+            mode: FaceDetector.Constants.Mode.fast,
+            detectLandmarks: FaceDetector.Constants.Landmarks.all,
+            runClassifications: FaceDetector.Constants.Classifications.all,
+            tracking: true,
+          }}
+          onCameraReady={() => setCamera({ ...camera, ready: true })}
+        >
+          <View
+            style={styles.topBar}
+          >
+            <TouchableOpacity
+              style={styles.toggleButton}
+              onPress={
+                () => {
+                  setCamera({
+                    ...camera,
+                    type: camera.type === Camera.Constants.Type.front ? Camera.Constants.Type.back : Camera.Constants.Type.front,
+                  });
+                }
+              }
             >
-              <Icon iconPackage="Fontisto" name="arrow-swap" size={30} color={Theme.colors.light} />
-            </CameraButton>
-            <CameraButton
-              activeOpacity={0.8}
+              <Icon iconPackage="Ionicons" name="ios-reverse-camera" size={32} color={Theme.colors.light} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.toggleButton}
+              onPress={
+                () => {
+                  setCamera({
+                    ...camera,
+                    flash: camera.flash === Camera.Constants.FlashMode.off ? Camera.Constants.FlashMode.torch : Camera.Constants.FlashMode.off,
+                  });
+                }
+              }
             >
-              <Icon iconPackage="MaterialCommunityIcons" name="record" size={50} color={Theme.colors.light} />
-            </CameraButton>
-            <CameraButton
-              activeOpacity={0.8}
-              onPress={() => {
-                setCamera({
-                  ...camera,
-                  flash: camera.flash === Camera.Constants.FlashMode.torch
-                    ? Camera.Constants.FlashMode.off
-                    : Camera.Constants.FlashMode.torch,
-                });
-              }}
-            >
-              <Icon iconPackage="Entypo" name="flashlight" size={40} color={camera.flash === Camera.Constants.FlashMode.torch ? Theme.colors.blue : Theme.colors.light} />
-            </CameraButton>
-          </BottomBar>
-        </CameraOverlay>
-      </Camera>
-    </CameraContainer>
+              <Icon iconPackage="Entypo" name="flashlight" size={32} color={(camera.flash === Camera.Constants.FlashMode.off || camera.type === Camera.Constants.Type.front) ? Theme.colors.light : Theme.colors.cyan} />
+            </TouchableOpacity>
+          </View>
+          <View
+            style={styles.bottomBar}
+          >
+            <View style={{ flex: 1 }}>
+              <TouchableOpacity
+                style={{ alignSelf: 'center' }}
+              >
+                <Icon iconPackage="Ionicons" name="ios-radio-button-on" size={70} color={Theme.colors.light} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Camera>
+        {facesDetected.length > 0 && renderFaces()}
+        {facesDetected.length > 0 && renderLandmarks()}
+      </View>
+    </View>
   );
 };
 
