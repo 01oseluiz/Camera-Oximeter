@@ -40,6 +40,7 @@ interface IFaceProps {
 }
 
 const Oximeter : React.FC = () => {
+  const [cameraRef, setCameraRef] = useState<Camera | null>(null);
   const [camera, setCamera] = useState({
     allowed: false,
     ready: false,
@@ -169,6 +170,9 @@ const Oximeter : React.FC = () => {
     <View style={styles.container}>
       <View style={{ flex: 1 }}>
         <Camera
+          ref={(ref) => {
+            setCameraRef(ref);
+          }}
           style={styles.camera}
           type={camera.type}
           ratio="16:9"
