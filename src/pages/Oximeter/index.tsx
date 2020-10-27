@@ -11,6 +11,7 @@ import { useNavigation } from '@react-navigation/native';
 import AsyncButton from '../../components/AsyncButton';
 import Icon from '../../components/Icon';
 import Label from '../../components/Label';
+import base64Decode, { ImageContainer } from '../../components/Base64Decoder';
 
 // Styled components
 import styles from './styles';
@@ -39,16 +40,80 @@ interface IFaceProps {
   noseBasePosition: Record<string, number>
 }
 
-const Oximeter : React.FC = () => {
+interface CameraPictureExif {
+  ApertureValue : number,
+  ColorSpace : number,
+  ComponentsConfiguration : string,
+  DateTime : string,
+  DateTimeDigitized : string,
+  DateTimeOriginal : string,
+  ExifVersion : string,
+  ExposureBiasValue : number,
+  ExposureTime : number,
+  FNumber : number,
+  Flash : number,
+  FlashpixVersion : string,
+  FocalLength : number,
+  FocalLengthIn35mmFilm : number,
+  ISOSpeedRatings : number,
+  ImageLength : number,
+  ImageUniqueID : string,
+  ImageWidth : number,
+  InteroperabilityIndex : string,
+  LightSource : number,
+  Make : string,
+  MaxApertureValue : number,
+  Model : string,
+  Orientation : number,
+  PixelXDimension : number,
+  PixelYDimension : number,
+  ResolutionUnit : number,
+  SensingMethod : number,
+  ShutterSpeedValue : number,
+  Software : string,
+  SubSecTime : string,
+  SubSecTimeDigitized : string,
+  SubSecTimeOriginal : string,
+  WhiteBalance : number,
+  XResolution : number,
+  YCbCrPositioning : number,
+  YResolution : number
+}
+
+interface CameraPicture {
+  uri : string,
+  width : number,
+  height : number,
+  exif? : CameraPictureExif,
+  // base64 should be actually optional, but for this program it is obligatory
+  base64: string
+}
+
+const Oximeter: React.FC = () => {
   const [cameraRef, setCameraRef] = useState<Camera | null>(null);
   const [camera, setCamera] = useState({
     allowed: false,
     ready: false,
     flash: Camera.Constants.FlashMode.off,
-    type: Camera.Constants.Type.back,
+    type: Camera.Constants.Type.front,
   });
   const [facesDetected, setFacesDetected] = useState<IFaceProps[]>([]);
   const navigation = useNavigation();
+
+  /**
+   * Number of recent frames to keep in recentFrames array
+   *
+   * @see recentFrames
+   */
+  const neededFrames = 8;
+  /**
+   * Chronologically ordered array of bitmap frames with the most recent frames
+   * of the forehead. The quantity of frames it saves depends on neededFrames
+   * constant.
+   *
+   * @see neededFrames
+   */
+  const recentFrames: Array<string> = [];
 
   setStatusBarHidden(true, 'slide');
 
@@ -58,6 +123,20 @@ const Oximeter : React.FC = () => {
       setCamera({ ...camera, allowed: (status === 'granted') });
     })();
   }, []);
+
+  const storeFrame = (image: CameraPicture): void => {
+    const a : ImageContainer = base64Decode(image.base64, image.height, image.width);
+    // console.log(a);
+    let teste = '';
+    for (let i = 0; i < 1000; i++) {
+      teste += `${a.data[i]} `;
+    }
+    console.log(image.base64, teste);
+    // Add new image
+    recentFrames.push(image.base64);
+    // Remove last one if enough images
+    if (recentFrames.length > neededFrames) recentFrames.shift();
+  };
 
   const renderFace = (face : IFaceProps) : JSX.Element => (
     <View
@@ -228,6 +307,13 @@ const Oximeter : React.FC = () => {
             <View style={{ flex: 1 }}>
               <TouchableOpacity
                 style={{ alignSelf: 'center' }}
+                onPress={
+                  () => {
+                    cameraRef?.takePictureAsync({
+                      base64: true, exif: false, skipProcessing: true, onPictureSaved: storeFrame,
+                    });
+                  }
+                }
               >
                 <Icon iconPackage="Ionicons" name="ios-radio-button-on" size={70} color={Theme.colors.light} />
               </TouchableOpacity>
