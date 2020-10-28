@@ -92,13 +92,12 @@ interface CameraPicture {
 
 const Oximeter: React.FC = () => {
   const [cameraRef, setCameraRef] = useState<Camera | null>(null);
-  const [camera, setCamera] = useState({
-    allowed: false,
-    ready: false,
-    flash: Camera.Constants.FlashMode.off,
-    type: Camera.Constants.Type.front,
-  });
+  const [allowed, setAllowed] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [flash, setFlash] = useState(Camera.Constants.FlashMode.off);
+  const [type, setType] = useState(Camera.Constants.Type.front);
   const [facesDetected, setFacesDetected] = useState<IFaceProps[]>([]);
+
   const navigation = useNavigation();
 
   /**
@@ -121,7 +120,7 @@ const Oximeter: React.FC = () => {
   useEffect(() => {
     (async () => {
       const { status } = await Camera.requestPermissionsAsync();
-      setCamera({ ...camera, allowed: (status === 'granted') });
+      setAllowed((status === 'granted'));
     })();
   }, []);
 
@@ -217,7 +216,7 @@ const Oximeter: React.FC = () => {
     </View>
   );
 
-  if (camera.allowed !== true) {
+  if (allowed !== true) {
     return (
       <View style={styles.noPermissions}>
         <LinearGradient
@@ -230,8 +229,8 @@ const Oximeter: React.FC = () => {
             height: 610,
           }}
         />
-        {camera.allowed === false && <Text style={{ color: Theme.colors.dark }}>O aplicativo não consegue acessar a câmera</Text>}
-        {camera.allowed === null && <Text style={{ color: Theme.colors.dark }}>Solicitando permissões de câmera</Text>}
+        {allowed === false && <Text style={{ color: Theme.colors.dark }}>O aplicativo não consegue acessar a câmera</Text>}
+        {allowed === null && <Text style={{ color: Theme.colors.dark }}>Solicitando permissões de câmera</Text>}
         <AsyncButton
           styles={{
             flex: 1,
@@ -265,10 +264,10 @@ const Oximeter: React.FC = () => {
             setCameraRef(ref);
           }}
           style={styles.camera}
-          type={camera.type}
+          type={type}
           ratio="16:9"
-          flashMode={camera.flash}
-          onFacesDetected={camera.ready ? (event: FaceDetectionResult) => {
+          flashMode={flash}
+          onFacesDetected={ready ? (event: FaceDetectionResult) => {
             if (event.faces.length > 0) {
               setFacesDetected(event.faces);
             } else {
@@ -281,36 +280,22 @@ const Oximeter: React.FC = () => {
             runClassifications: FaceDetector.Constants.Classifications.all,
             tracking: true,
           }}
-          onCameraReady={() => setCamera({ ...camera, ready: true })}
+          onCameraReady={() => setReady(true)}
         >
           <View
             style={styles.topBar}
           >
             <TouchableOpacity
               style={styles.toggleButton}
-              onPress={
-                () => {
-                  setCamera({
-                    ...camera,
-                    type: camera.type === Camera.Constants.Type.front ? Camera.Constants.Type.back : Camera.Constants.Type.front,
-                  });
-                }
-              }
+              onPress={() => setType(type === Camera.Constants.Type.front ? Camera.Constants.Type.back : Camera.Constants.Type.front)}
             >
               <Icon iconPackage="Ionicons" name="ios-reverse-camera" size={32} color={Theme.colors.light} />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.toggleButton}
-              onPress={
-                () => {
-                  setCamera({
-                    ...camera,
-                    flash: camera.flash === Camera.Constants.FlashMode.off ? Camera.Constants.FlashMode.torch : Camera.Constants.FlashMode.off,
-                  });
-                }
-              }
+              onPress={() => setFlash(flash === Camera.Constants.FlashMode.off ? Camera.Constants.FlashMode.torch : Camera.Constants.FlashMode.off)}
             >
-              <Icon iconPackage="Entypo" name="flashlight" size={32} color={(camera.flash === Camera.Constants.FlashMode.off || camera.type === Camera.Constants.Type.front) ? Theme.colors.light : Theme.colors.cyan} />
+              <Icon iconPackage="Entypo" name="flashlight" size={32} color={(flash === Camera.Constants.FlashMode.off || type === Camera.Constants.Type.front) ? Theme.colors.light : Theme.colors.cyan} />
             </TouchableOpacity>
           </View>
           <View
