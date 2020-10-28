@@ -12,6 +12,8 @@ import AsyncButton from '../../components/AsyncButton';
 import Icon from '../../components/Icon';
 import Label from '../../components/Label';
 
+import OpenCV from '../../NativeModules/OpenCV';
+
 // Styled components
 import styles from './styles';
 import { Theme } from '../../constants';
@@ -39,25 +41,113 @@ interface IFaceProps {
   noseBasePosition: Record<string, number>
 }
 
-const Oximeter : React.FC = () => {
+interface CameraPictureExif {
+  ApertureValue : number,
+  ColorSpace : number,
+  ComponentsConfiguration : string,
+  DateTime : string,
+  DateTimeDigitized : string,
+  DateTimeOriginal : string,
+  ExifVersion : string,
+  ExposureBiasValue : number,
+  ExposureTime : number,
+  FNumber : number,
+  Flash : number,
+  FlashpixVersion : string,
+  FocalLength : number,
+  FocalLengthIn35mmFilm : number,
+  ISOSpeedRatings : number,
+  ImageLength : number,
+  ImageUniqueID : string,
+  ImageWidth : number,
+  InteroperabilityIndex : string,
+  LightSource : number,
+  Make : string,
+  MaxApertureValue : number,
+  Model : string,
+  Orientation : number,
+  PixelXDimension : number,
+  PixelYDimension : number,
+  ResolutionUnit : number,
+  SensingMethod : number,
+  ShutterSpeedValue : number,
+  Software : string,
+  SubSecTime : string,
+  SubSecTimeDigitized : string,
+  SubSecTimeOriginal : string,
+  WhiteBalance : number,
+  XResolution : number,
+  YCbCrPositioning : number,
+  YResolution : number
+}
+
+interface CameraPicture {
+  uri : string,
+  width : number,
+  height : number,
+  exif? : CameraPictureExif,
+  // base64 should be actually optional, but for this program it is obligatory
+  base64: string
+}
+
+const Oximeter: React.FC = () => {
   const [cameraRef, setCameraRef] = useState<Camera | null>(null);
-  const [camera, setCamera] = useState({
-    allowed: false,
-    ready: false,
-    flash: Camera.Constants.FlashMode.off,
-    type: Camera.Constants.Type.back,
-  });
+  const [allowed, setAllowed] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [flash, setFlash] = useState(Camera.Constants.FlashMode.off);
+  const [type, setType] = useState(Camera.Constants.Type.front);
   const [facesDetected, setFacesDetected] = useState<IFaceProps[]>([]);
+
   const navigation = useNavigation();
+
+  /**
+   * Number of recent frames to keep in recentFrames array
+   *
+   * @see recentFrames
+   */
+  const neededFrames = 8;
+  /**
+   * Chronologically ordered array of bitmap frames with the most recent frames
+   * of the forehead. The quantity of frames it saves depends on neededFrames
+   * constant.
+   *
+   * @see neededFrames
+   */
+  const recentFrames: Array<string> = [];
 
   setStatusBarHidden(true, 'slide');
 
   useEffect(() => {
     (async () => {
       const { status } = await Camera.requestPermissionsAsync();
-      setCamera({ ...camera, allowed: (status === 'granted') });
+      setAllowed((status === 'granted'));
     })();
   }, []);
+
+  const checkForBlurryImage = (imageAsBase64: string) : Promise<unknown> => new Promise((resolve, reject) => {
+    OpenCV.checkForBlurryImage(imageAsBase64, (error: unknown) => {
+      // error handling
+    }, (msg: unknown) => {
+      resolve(msg);
+    });
+  });
+
+  const storeFrame = (image: CameraPicture): void => {
+    checkForBlurryImage(image.base64).then((blurryPhoto) => {
+      if (blurryPhoto) {
+        console.log('Tá borrado');
+      } else {
+        console.log('Não tá borrado');
+      }
+    }).catch((err) => {
+      console.log('err', err);
+    });
+
+    // Add new image
+    recentFrames.push(image.base64);
+    // Remove last one if enough images
+    if (recentFrames.length > neededFrames) recentFrames.shift();
+  };
 
   const renderFace = (face : IFaceProps) : JSX.Element => (
     <View
@@ -126,7 +216,7 @@ const Oximeter : React.FC = () => {
     </View>
   );
 
-  if (camera.allowed !== true) {
+  if (allowed !== true) {
     return (
       <View style={styles.noPermissions}>
         <LinearGradient
@@ -139,8 +229,8 @@ const Oximeter : React.FC = () => {
             height: 610,
           }}
         />
-        {camera.allowed === false && <Text style={{ color: Theme.colors.dark }}>O aplicativo não consegue acessar a câmera</Text>}
-        {camera.allowed === null && <Text style={{ color: Theme.colors.dark }}>Solicitando permissões de câmera</Text>}
+        {allowed === false && <Text style={{ color: Theme.colors.dark }}>O aplicativo não consegue acessar a câmera</Text>}
+        {allowed === null && <Text style={{ color: Theme.colors.dark }}>Solicitando permissões de câmera</Text>}
         <AsyncButton
           styles={{
             flex: 1,
@@ -174,10 +264,10 @@ const Oximeter : React.FC = () => {
             setCameraRef(ref);
           }}
           style={styles.camera}
-          type={camera.type}
+          type={type}
           ratio="16:9"
-          flashMode={camera.flash}
-          onFacesDetected={camera.ready ? (event: FaceDetectionResult) => {
+          flashMode={flash}
+          onFacesDetected={ready ? (event: FaceDetectionResult) => {
             if (event.faces.length > 0) {
               setFacesDetected(event.faces);
             } else {
@@ -190,36 +280,22 @@ const Oximeter : React.FC = () => {
             runClassifications: FaceDetector.Constants.Classifications.all,
             tracking: true,
           }}
-          onCameraReady={() => setCamera({ ...camera, ready: true })}
+          onCameraReady={() => setReady(true)}
         >
           <View
             style={styles.topBar}
           >
             <TouchableOpacity
               style={styles.toggleButton}
-              onPress={
-                () => {
-                  setCamera({
-                    ...camera,
-                    type: camera.type === Camera.Constants.Type.front ? Camera.Constants.Type.back : Camera.Constants.Type.front,
-                  });
-                }
-              }
+              onPress={() => setType(type === Camera.Constants.Type.front ? Camera.Constants.Type.back : Camera.Constants.Type.front)}
             >
               <Icon iconPackage="Ionicons" name="ios-reverse-camera" size={32} color={Theme.colors.light} />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.toggleButton}
-              onPress={
-                () => {
-                  setCamera({
-                    ...camera,
-                    flash: camera.flash === Camera.Constants.FlashMode.off ? Camera.Constants.FlashMode.torch : Camera.Constants.FlashMode.off,
-                  });
-                }
-              }
+              onPress={() => setFlash(flash === Camera.Constants.FlashMode.off ? Camera.Constants.FlashMode.torch : Camera.Constants.FlashMode.off)}
             >
-              <Icon iconPackage="Entypo" name="flashlight" size={32} color={(camera.flash === Camera.Constants.FlashMode.off || camera.type === Camera.Constants.Type.front) ? Theme.colors.light : Theme.colors.cyan} />
+              <Icon iconPackage="Entypo" name="flashlight" size={32} color={(flash === Camera.Constants.FlashMode.off || type === Camera.Constants.Type.front) ? Theme.colors.light : Theme.colors.cyan} />
             </TouchableOpacity>
           </View>
           <View
@@ -228,6 +304,13 @@ const Oximeter : React.FC = () => {
             <View style={{ flex: 1 }}>
               <TouchableOpacity
                 style={{ alignSelf: 'center' }}
+                onPress={
+                  () => {
+                    cameraRef?.takePictureAsync({
+                      base64: true, exif: false, skipProcessing: true, onPictureSaved: storeFrame,
+                    });
+                  }
+                }
               >
                 <Icon iconPackage="Ionicons" name="ios-radio-button-on" size={70} color={Theme.colors.light} />
               </TouchableOpacity>
