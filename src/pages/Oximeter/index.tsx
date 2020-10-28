@@ -11,7 +11,8 @@ import { useNavigation } from '@react-navigation/native';
 import AsyncButton from '../../components/AsyncButton';
 import Icon from '../../components/Icon';
 import Label from '../../components/Label';
-import base64Decode, { ImageContainer } from '../../components/Base64Decoder';
+
+import OpenCV from '../../NativeModules/OpenCV';
 
 // Styled components
 import styles from './styles';
@@ -124,14 +125,25 @@ const Oximeter: React.FC = () => {
     })();
   }, []);
 
+  const checkForBlurryImage = (imageAsBase64: string) : Promise<unknown> => new Promise((resolve, reject) => {
+    OpenCV.checkForBlurryImage(imageAsBase64, (error: unknown) => {
+      // error handling
+    }, (msg: unknown) => {
+      resolve(msg);
+    });
+  });
+
   const storeFrame = (image: CameraPicture): void => {
-    const a : ImageContainer = base64Decode(image.base64, image.height, image.width);
-    // console.log(a);
-    let teste = '';
-    for (let i = 0; i < 1000; i++) {
-      teste += `${a.data[i]} `;
-    }
-    console.log(image.base64, teste);
+    checkForBlurryImage(image.base64).then((blurryPhoto) => {
+      if (blurryPhoto) {
+        console.log('Tá borrado');
+      } else {
+        console.log('Não tá borrado');
+      }
+    }).catch((err) => {
+      console.log('err', err);
+    });
+
     // Add new image
     recentFrames.push(image.base64);
     // Remove last one if enough images
