@@ -54,17 +54,18 @@ public class RNOpenCvLibraryModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void cutImage(String imageAsBase64, int x, int y, int width, int height, Callback errorCallback, Callback successCallback) {
+    public void cutImage(String imageAsBase64, int x, int y, int width, int height, boolean flipImg, Callback errorCallback, Callback successCallback) {
       try {
         Bitmap bitmapImg = this.base64ToBitmap(imageAsBase64);
         Mat img = new Mat();
         Utils.bitmapToMat(bitmapImg, img);
 
-        Mat flippedImg = new Mat();
-        Core.flip(img, flippedImg, 1);
+        if (flipImg) {
+          Core.flip(img, img, 1);
+        }
 
         Rect rect = new Rect(x, y, width, height);
-        Mat croppedMat = flippedImg.submat(rect);
+        Mat croppedMat = img.submat(rect);
         Bitmap CroppedImage = Bitmap.createBitmap(croppedMat.cols(), croppedMat.rows(), Bitmap.Config.ARGB_8888);
         Utils.matToBitmap(croppedMat, CroppedImage);
 

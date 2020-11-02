@@ -77,6 +77,7 @@ const Oximeter: React.FC = () => {
         foreheadPosition.y,
         foreheadPosition.width,
         foreheadPosition.height,
+        type == Camera.Constants.Type.front
       )
     })
     .then((croppedImg: string) => {

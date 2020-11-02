@@ -11,10 +11,11 @@ export const calcForeheadPosition = (
     origin: Record<string, number>,
     viewScale:number = 1
   ) : forehead => {
-  return {
-    x: Math.floor(viewScale * ((rightEyePosition.x - 0.25*(leftEyePosition.x - rightEyePosition.x)))),
-    y: Math.floor(viewScale * (0.95*origin.y)),
-    width: Math.floor(viewScale * ((1.5*(leftEyePosition.x - rightEyePosition.x)))),
-    height: Math.floor(viewScale * (0.9*(leftEyePosition.y + rightEyePosition.y)/2 - origin.y))
-  }
+
+    const width = Math.floor(viewScale * ((1.5*Math.abs(leftEyePosition.x - rightEyePosition.x))));
+    const height = Math.floor(viewScale * (0.9*(leftEyePosition.y + rightEyePosition.y)/2 - origin.y));
+    const x = Math.floor(viewScale * Math.min(rightEyePosition.x, leftEyePosition.x) - 0.16 * width);
+    const y = Math.floor(viewScale * (0.95*origin.y))
+
+    return { width, height, x, y};
 }

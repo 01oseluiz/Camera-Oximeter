@@ -13,6 +13,8 @@ interface FacesForeheadProps {
 
 const FacesLandmarks = (props: FacesForeheadProps) => {
   const renderForehead = (face : IFaceProps) : JSX.Element => {
+    if (!(face.leftEyePosition && face.rightEyePosition && face.bounds.origin)) return (<View/>);
+
     const foreheadPosition = calcForeheadPosition(face.leftEyePosition, face.rightEyePosition, face.bounds.origin);
 
     return (

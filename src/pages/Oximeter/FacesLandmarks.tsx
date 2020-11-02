@@ -11,7 +11,7 @@ interface FacesLandmarksProps {
 
 const FacesLandmarks = (props: FacesLandmarksProps) => {
   const renderLandmark = (face: IFaceProps) : JSX.Element => {
-    const positionLandmark = (position : Record<string, number>) : JSX.Element => (
+    const positionLandmark = (position : Record<string, number>) : JSX.Element => position && (
     <View
       style={[
         styles.landmark,
