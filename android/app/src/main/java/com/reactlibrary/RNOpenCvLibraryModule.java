@@ -7,12 +7,17 @@ import com.facebook.react.bridge.Callback;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.Base64;
+import java.io.ByteArrayOutputStream;
 
+import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.Rect;
 
 import org.opencv.android.Utils;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.imgcodecs.Imgcodecs;
 
 import android.util.Base64;
 
@@ -30,7 +35,45 @@ public class RNOpenCvLibraryModule extends ReactContextBaseJavaModule {
         return "RNOpenCvLibrary";
     }
 
+    private Bitmap base64ToBitmap(String imageAsBase64) {
+      BitmapFactory.Options options = new BitmapFactory.Options();
+      options.inDither = true;
+      options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+
+      byte[] decodedString = Base64.decode(imageAsBase64, Base64.DEFAULT);
+      Bitmap image = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+
+      return image;
+    }
+
+    private String bitmapToBase64(Bitmap image) {
+      ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+      image.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
+
+      return Base64.encodeToString(outputStream.toByteArray(), Base64.DEFAULT);
+    }
+
     @ReactMethod
+    public void cutImage(String imageAsBase64, int x, int y, int width, int height, Callback errorCallback, Callback successCallback) {
+      try {
+        Bitmap bitmapImg = this.base64ToBitmap(imageAsBase64);
+        Mat img = new Mat();
+        Utils.bitmapToMat(bitmapImg, img);
+
+        Mat flippedImg = new Mat();
+        Core.flip(img, flippedImg, 1);
+
+        Rect rect = new Rect(x, y, width, height);
+        Mat croppedMat = flippedImg.submat(rect);
+        Bitmap CroppedImage = Bitmap.createBitmap(croppedMat.cols(), croppedMat.rows(), Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(croppedMat, CroppedImage);
+
+        successCallback.invoke(this.bitmapToBase64(CroppedImage));
+      } catch (Exception e) {
+        errorCallback.invoke(e.getMessage());
+      }
+    }
+
     public void checkForBlurryImage(String imageAsBase64, Callback errorCallback, Callback successCallback) {
         try {
             BitmapFactory.Options options = new BitmapFactory.Options();

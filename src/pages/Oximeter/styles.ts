@@ -62,6 +62,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
+  foreheadsContainer: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    left: 0,
+    top: 0,
+  },
+  forehead: {
+    borderWidth: 2,
+    borderRadius: 2,
+    position: 'absolute',
+    borderColor: '#FFD700',
+  },
   landmark: {
     width: 2,
     height: 2,
