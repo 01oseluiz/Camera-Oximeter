@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Dimensions } from 'react-native';
-
-import {IFaceProps} from './interfaces';
+import {
+  View, Text, TouchableOpacity, Dimensions,
+} from 'react-native';
 
 import { Camera, FaceDetectionResult, CameraCapturedPicture } from 'expo-camera';
 import * as FaceDetector from 'expo-face-detector';
@@ -9,17 +9,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { setStatusBarHidden } from 'expo-status-bar';
 
 import { useNavigation } from '@react-navigation/native';
+import { IFaceProps } from './interfaces';
 
 import AsyncButton from '../../components/AsyncButton';
 import Icon from '../../components/Icon';
 import Label from '../../components/Label';
-import FacesData from './FacesData';
-import FacesLandmarks from './FacesLandmarks';
+// import FacesData from './FacesData';
+// import FacesLandmarks from './FacesLandmarks';
 import FacesForehead from './FacesForehead';
 
 import OpenCV from '../../NativeModules/OpenCV';
 
-import {calcForeheadPosition} from './utils';
+// import { calcForeheadPosition } from './utils';
 
 // Styled components
 import styles from './styles';
@@ -60,38 +61,41 @@ const Oximeter: React.FC = () => {
     })();
   }, []);
 
-  const takePicture = () => {
-    if (isProcessing) return
+  const processImage = async (img: CameraCapturedPicture) : Promise<void> => {
+    try {
+      const currFace = facesDetected[0];
+      const screenScale = img.width / Dimensions.get('screen').width;
 
-    setIsProcessing(true);
-
-    cameraRef?.takePictureAsync({base64: true, exif: false, skipProcessing: true})
-    .then(async (img: CameraCapturedPicture) => {
-      const currFace = facesDetected[0]
-      const screenScale = img.width / Dimensions.get("screen").width;
-      const foreheadPosition = calcForeheadPosition(currFace.leftEyePosition, currFace.rightEyePosition, currFace.bounds.origin, screenScale);
-
-      return OpenCV.cutImage(
-        img.base64 || "",
-        foreheadPosition.x,
-        foreheadPosition.y,
-        foreheadPosition.width,
-        foreheadPosition.height,
-        type == Camera.Constants.Type.front
-      )
-    })
-    .then((croppedImg: string) => {
+      const croppedImg = await OpenCV.cutImage(
+        img.base64 || '',
+        currFace.leftEyePosition,
+        currFace.rightEyePosition,
+        currFace.bounds.origin,
+        screenScale,
+        type === Camera.Constants.Type.front,
+      );
       // Add new image
       recentFrames.push(croppedImg);
       // Remove last one if enough images
       if (recentFrames.length > neededFrames) recentFrames.shift();
       setRecentFrames(recentFrames);
-    })
-    .catch((err) => {
-      console.log('err', err);
-    })
-    .then(() => setIsProcessing(false));
-  }
+    } catch (error) {
+      /* eslint-disable no-console */
+      console.log(error);
+    }
+
+    setIsProcessing(false);
+  };
+
+  const takePicture = () : void => {
+    if (isProcessing) return;
+
+    setIsProcessing(true);
+
+    cameraRef?.takePictureAsync({
+      base64: true, exif: false, skipProcessing: false, onPictureSaved: processImage,
+    });
+  };
 
   if (allowed !== true) {
     return (
@@ -191,7 +195,7 @@ const Oximeter: React.FC = () => {
         </Camera>
         {/* {facesDetected.length > 0 && <FacesData facesDetected={facesDetected}/>} */}
         {/* {facesDetected.length > 0 && <FacesLandmarks facesDetected={facesDetected}/>} */}
-        {facesDetected.length > 0 && <FacesForehead facesDetected={facesDetected} lastForeheadBase64={recentFrames[recentFrames.length-1]}/>}
+        {facesDetected.length > 0 && <FacesForehead facesDetected={facesDetected} lastForeheadBase64={recentFrames[recentFrames.length - 1]} />}
       </View>
     </View>
   );
