@@ -1,7 +1,3 @@
-// import styled from 'styled-components/native';
-// import { ViewProps, TextProps, TouchableOpacityProps } from 'react-native';
-// import { Theme } from '../../constants';
-
 import { StyleSheet } from 'react-native';
 
 import Constants from 'expo-constants';
@@ -45,35 +41,6 @@ const styles = StyleSheet.create({
     padding: 5,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  facesContainer: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    left: 0,
-    top: 0,
-  },
-  face: {
-    padding: 10,
-    borderWidth: 2,
-    borderRadius: 2,
-    position: 'absolute',
-    borderColor: '#FFD700',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  landmark: {
-    width: 2,
-    height: 2,
-    position: 'absolute',
-    backgroundColor: 'red',
-  },
-  faceText: {
-    color: '#FFD700',
-    fontWeight: 'bold',
-    textAlign: 'center',
-    margin: 10,
-    backgroundColor: 'transparent',
   },
 });
 

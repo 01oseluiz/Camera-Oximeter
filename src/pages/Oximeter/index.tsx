@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 
-import { Camera, FaceDetectionResult } from 'expo-camera';
-import * as FaceDetector from 'expo-face-detector';
+import { Camera } from 'expo-camera';
+import * as Permissions from 'expo-permissions';
 import { LinearGradient } from 'expo-linear-gradient';
 import { setStatusBarHidden } from 'expo-status-bar';
 
@@ -81,140 +81,53 @@ interface CameraPictureExif {
   YResolution : number
 }
 
-interface CameraPicture {
-  uri : string,
-  width : number,
-  height : number,
-  exif? : CameraPictureExif,
-  // base64 should be actually optional, but for this program it is obligatory
-  base64: string
-}
-
 const Oximeter: React.FC = () => {
   const [cameraRef, setCameraRef] = useState<Camera | null>(null);
   const [allowed, setAllowed] = useState(false);
   const [ready, setReady] = useState(false);
   const [flash, setFlash] = useState(Camera.Constants.FlashMode.off);
   const [type, setType] = useState(Camera.Constants.Type.front);
-  const [facesDetected, setFacesDetected] = useState<IFaceProps[]>([]);
+  const [isRecording, setRecording] = useState(false);
 
   const navigation = useNavigation();
-
-  /**
-   * Number of recent frames to keep in recentFrames array
-   *
-   * @see recentFrames
-   */
-  const neededFrames = 8;
-  /**
-   * Chronologically ordered array of bitmap frames with the most recent frames
-   * of the forehead. The quantity of frames it saves depends on neededFrames
-   * constant.
-   *
-   * @see neededFrames
-   */
-  const recentFrames: Array<string> = [];
 
   setStatusBarHidden(true, 'slide');
 
   useEffect(() => {
     (async () => {
-      const { status } = await Camera.requestPermissionsAsync();
-      setAllowed((status === 'granted'));
+      let { granted } = await Permissions.getAsync(
+        Permissions.CAMERA,
+        Permissions.AUDIO_RECORDING,
+      );
+
+      if (!granted) {
+        granted = (await Permissions.askAsync(
+          Permissions.CAMERA,
+          Permissions.AUDIO_RECORDING,
+        )).granted;
+      }
+
+      setAllowed(granted);
     })();
   }, []);
 
-  const checkForBlurryImage = (imageAsBase64: string) : Promise<unknown> => new Promise((resolve, reject) => {
-    OpenCV.checkForBlurryImage(imageAsBase64, (error: unknown) => {
-      // error handling
-    }, (msg: unknown) => {
-      resolve(msg);
-    });
-  });
+  const recordVideo = async (): Promise<void> => {
+    if (!ready) return;
 
-  const storeFrame = (image: CameraPicture): void => {
-    checkForBlurryImage(image.base64).then((blurryPhoto) => {
-      if (blurryPhoto) {
-        console.log('Tá borrado');
-      } else {
-        console.log('Não tá borrado');
-      }
-    }).catch((err) => {
-      console.log('err', err);
+    setRecording(true);
+    cameraRef?.resumePreview();
+
+    const video = await cameraRef?.recordAsync({
+      quality: Camera.Constants.VideoQuality['1080p'],
+      maxDuration: 2,
+      mute: true,
     });
 
-    // Add new image
-    recentFrames.push(image.base64);
-    // Remove last one if enough images
-    if (recentFrames.length > neededFrames) recentFrames.shift();
+    cameraRef?.resumePreview();
+    console.log(video?.uri);
+
+    setRecording(false);
   };
-
-  const renderFace = (face : IFaceProps) : JSX.Element => (
-    <View
-      key={face.faceID}
-      style={[
-        styles.face,
-        {
-          transform: [
-            { perspective: 600 },
-            { rotateZ: `${face.rollAngle.toFixed(0)}deg` },
-            { rotateY: `${face.yawAngle.toFixed(0)}deg` },
-          ],
-        },
-        {
-          ...face.bounds.size,
-          left: face.bounds.origin.x,
-          top: face.bounds.origin.y,
-        },
-      ]}
-    >
-      <Text style={styles.faceText}>ID: {face.faceID}</Text>
-      <Text style={styles.faceText}>rollAngle: {face.rollAngle.toFixed(0)}</Text>
-      <Text style={styles.faceText}>yawAngle: {face.yawAngle.toFixed(0)}</Text>
-      <Text style={styles.faceText}>BPM: 68</Text>
-      <Text style={styles.faceText}>Sp02: 98%</Text>
-    </View>
-  );
-
-  const renderLandmark = (face: IFaceProps) : JSX.Element => {
-    const positionLandmark = (position : Record<string, number>) : JSX.Element => position && (
-    <View
-      style={[
-        styles.landmark,
-        {
-          left: position.x - 1,
-          top: position.y - 1,
-        },
-      ]}
-    />
-    );
-    return (
-      <View key={`landmarks-${face.faceID}`}>
-        {positionLandmark(face.leftEyePosition)}
-        {positionLandmark(face.rightEyePosition)}
-        {positionLandmark(face.leftEarPosition)}
-        {positionLandmark(face.rightEarPosition)}
-        {positionLandmark(face.leftCheekPosition)}
-        {positionLandmark(face.rightCheekPosition)}
-        {positionLandmark(face.mouthPosition)}
-        {positionLandmark(face.leftMouthPosition)}
-        {positionLandmark(face.rightMouthPosition)}
-        {positionLandmark(face.noseBasePosition)}
-      </View>
-    );
-  };
-
-  const renderFaces = () : JSX.Element => (
-    <View style={styles.facesContainer} pointerEvents="none">
-      {facesDetected.map(renderFace)}
-    </View>
-  );
-
-  const renderLandmarks = () : JSX.Element => (
-    <View style={styles.facesContainer} pointerEvents="none">
-      {facesDetected.map(renderLandmark)}
-    </View>
-  );
 
   if (allowed !== true) {
     return (
@@ -267,19 +180,6 @@ const Oximeter: React.FC = () => {
           type={type}
           ratio="16:9"
           flashMode={flash}
-          onFacesDetected={ready ? (event: FaceDetectionResult) => {
-            if (event.faces.length > 0) {
-              setFacesDetected(event.faces);
-            } else {
-              setFacesDetected([]);
-            }
-          } : undefined}
-          faceDetectorSettings={{
-            mode: FaceDetector.Constants.Mode.fast,
-            detectLandmarks: FaceDetector.Constants.Landmarks.all,
-            runClassifications: FaceDetector.Constants.Classifications.all,
-            tracking: true,
-          }}
           onCameraReady={() => setReady(true)}
         >
           <View
@@ -304,21 +204,14 @@ const Oximeter: React.FC = () => {
             <View style={{ flex: 1 }}>
               <TouchableOpacity
                 style={{ alignSelf: 'center' }}
-                onPress={
-                  () => {
-                    cameraRef?.takePictureAsync({
-                      base64: true, exif: false, skipProcessing: true, onPictureSaved: storeFrame,
-                    });
-                  }
-                }
+                disabled={isRecording}
+                onPress={recordVideo}
               >
                 <Icon iconPackage="Ionicons" name="ios-radio-button-on" size={70} color={Theme.colors.light} />
               </TouchableOpacity>
             </View>
           </View>
         </Camera>
-        {facesDetected.length > 0 && renderFaces()}
-        {facesDetected.length > 0 && renderLandmarks()}
       </View>
     </View>
   );
