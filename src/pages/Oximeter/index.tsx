@@ -12,74 +12,11 @@ import AsyncButton from '../../components/AsyncButton';
 import Icon from '../../components/Icon';
 import Label from '../../components/Label';
 
-import OpenCV from '../../NativeModules/OpenCV';
+import processVideo from './integrations';
 
 // Styled components
 import styles from './styles';
 import { Theme } from '../../constants';
-
-interface IFaceProps {
-  faceID: number,
-  bounds: {
-    origin: Record<string, number>,
-    size: Record<string, number>,
-  },
-  rollAngle: number,
-  yawAngle: number,
-  smilingProbability: number,
-  leftEarPosition: Record<string, number>,
-  rightEarPosition: Record<string, number>,
-  leftEyePosition: Record<string, number>,
-  leftEyeOpenProbability: number,
-  rightEyePosition: Record<string, number>,
-  rightEyeOpenProbability: Record<string, number>,
-  leftCheekPosition: Record<string, number>,
-  rightCheekPosition: Record<string, number>,
-  mouthPosition: Record<string, number>,
-  leftMouthPosition: Record<string, number>,
-  rightMouthPosition: Record<string, number>,
-  noseBasePosition: Record<string, number>
-}
-
-interface CameraPictureExif {
-  ApertureValue : number,
-  ColorSpace : number,
-  ComponentsConfiguration : string,
-  DateTime : string,
-  DateTimeDigitized : string,
-  DateTimeOriginal : string,
-  ExifVersion : string,
-  ExposureBiasValue : number,
-  ExposureTime : number,
-  FNumber : number,
-  Flash : number,
-  FlashpixVersion : string,
-  FocalLength : number,
-  FocalLengthIn35mmFilm : number,
-  ISOSpeedRatings : number,
-  ImageLength : number,
-  ImageUniqueID : string,
-  ImageWidth : number,
-  InteroperabilityIndex : string,
-  LightSource : number,
-  Make : string,
-  MaxApertureValue : number,
-  Model : string,
-  Orientation : number,
-  PixelXDimension : number,
-  PixelYDimension : number,
-  ResolutionUnit : number,
-  SensingMethod : number,
-  ShutterSpeedValue : number,
-  Software : string,
-  SubSecTime : string,
-  SubSecTimeDigitized : string,
-  SubSecTimeOriginal : string,
-  WhiteBalance : number,
-  XResolution : number,
-  YCbCrPositioning : number,
-  YResolution : number
-}
 
 const Oximeter: React.FC = () => {
   const [cameraRef, setCameraRef] = useState<Camera | null>(null);
@@ -124,7 +61,9 @@ const Oximeter: React.FC = () => {
     });
 
     cameraRef?.resumePreview();
-    console.log(video?.uri);
+    processVideo(video?.uri)
+      .then((bpm) => console.log(bpm))
+      .catch((error) => console.log(error));
 
     setRecording(false);
   };

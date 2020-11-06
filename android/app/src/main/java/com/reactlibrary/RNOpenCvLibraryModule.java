@@ -31,6 +31,13 @@ public class RNOpenCvLibraryModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
+    public void processVideo(String videoUri, Callback errorCallback, Callback successCallback) {
+        VideoCapture camera = new VideoCapture(videoUri);
+
+        successCallback.invoke(videoUri);
+    }
+
+    @ReactMethod
     public void checkForBlurryImage(String imageAsBase64, Callback errorCallback, Callback successCallback) {
         try {
             BitmapFactory.Options options = new BitmapFactory.Options();
