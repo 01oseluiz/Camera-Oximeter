@@ -6,7 +6,6 @@ const processVideo = (video: string|undefined) : Promise<unknown> => new Promise
     reject(error);
   }, (msg: unknown) => {
     resolve(msg);
-    console.log(`Deu bom: ${msg}`);
   });
 });
 

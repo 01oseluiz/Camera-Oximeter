@@ -14,6 +14,8 @@ import org.opencv.core.Mat;
 import org.opencv.android.Utils;
 import org.opencv.imgproc.Imgproc;
 
+import org.opencv.videoio.VideoCapture;
+
 import android.util.Base64;
 
 public class RNOpenCvLibraryModule extends ReactContextBaseJavaModule {
@@ -32,9 +34,14 @@ public class RNOpenCvLibraryModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void processVideo(String videoUri, Callback errorCallback, Callback successCallback) {
-        VideoCapture camera = new VideoCapture(videoUri);
 
-        successCallback.invoke(videoUri);
+        VideoCapture videoFile = new VideoCapture();
+        if(!videoFile.open(videoUri)) {
+          successCallback.invoke("Deu ruim");
+        }
+        else {
+          successCallback.invoke("Deu bom");
+        }
     }
 
     @ReactMethod
