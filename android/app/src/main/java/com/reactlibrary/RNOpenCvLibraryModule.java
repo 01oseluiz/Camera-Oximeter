@@ -1,22 +1,19 @@
 package com.reactlibrary;
 
-import com.facebook.react.bridge.ReactApplicationContext;
-import com.facebook.react.bridge.ReactContextBaseJavaModule;
-import com.facebook.react.bridge.ReactMethod;
-import com.facebook.react.bridge.Callback;
-
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
-
+import com.facebook.react.bridge.*;
+import android.graphics.*;
+import org.opencv.core.*;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.android.Utils;
 import org.opencv.imgproc.Imgproc;
-
 import org.opencv.videoio.VideoCapture;
-
 import android.util.Base64;
+
+import java.io.File;
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
+
+import static org.opencv.videoio.Videoio.*;
 
 public class RNOpenCvLibraryModule extends ReactContextBaseJavaModule {
 
@@ -36,12 +33,30 @@ public class RNOpenCvLibraryModule extends ReactContextBaseJavaModule {
     public void processVideo(String videoUri, Callback errorCallback, Callback successCallback) {
 
         VideoCapture videoFile = new VideoCapture();
-        if(!videoFile.open(videoUri)) {
-          successCallback.invoke("Deu ruim");
+        videoFile.setExceptionMode(true);
+
+        if (!videoFile.open(videoUri)) {
+            errorCallback.invoke("Deu ruim");
+            return;
         }
-        else {
-          successCallback.invoke("Deu bom");
+
+        Mat image = new Mat();
+        if (!videoFile.read(image)) {
+            errorCallback.invoke("Não deu pra ler, tô cego");
+            return;
         }
+
+        Bitmap bmp = Bitmap.createBitmap(image.cols(), image.rows(), Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(image, bmp);
+        int[] pixels = new int[bmp.getHeight() * bmp.getWidth()];
+        bmp.getPixels(pixels, 0, bmp.getWidth(), 0, 0, bmp.getWidth(), bmp.getHeight());
+        ByteBuffer byteBuffer = ByteBuffer.allocate(pixels.length * 4);
+        IntBuffer intBuffer = byteBuffer.asIntBuffer();
+        intBuffer.put(pixels);
+
+        byte[] bytes = byteBuffer.array();
+        String frame = Base64.encodeToString(bytes, Base64.NO_WRAP);
+        successCallback.invoke(frame);
     }
 
     @ReactMethod
@@ -54,9 +69,8 @@ public class RNOpenCvLibraryModule extends ReactContextBaseJavaModule {
             byte[] decodedString = Base64.decode(imageAsBase64, Base64.DEFAULT);
             Bitmap image = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
 
-
             // Bitmap image = decodeSampledBitmapFromFile(imageurl, 2000, 2000);
-            int l = CvType.CV_8UC1; //8-bit grey scale image
+            int l = CvType.CV_8UC1; // 8-bit grey scale image
             Mat matImage = new Mat();
             Utils.bitmapToMat(image, matImage);
             Mat matImageGrey = new Mat();
@@ -72,7 +86,8 @@ public class RNOpenCvLibraryModule extends ReactContextBaseJavaModule {
             Mat laplacianImage8bit = new Mat();
             laplacianImage.convertTo(laplacianImage8bit, l);
 
-            Bitmap bmp = Bitmap.createBitmap(laplacianImage8bit.cols(), laplacianImage8bit.rows(), Bitmap.Config.ARGB_8888);
+            Bitmap bmp = Bitmap.createBitmap(laplacianImage8bit.cols(), laplacianImage8bit.rows(),
+                    Bitmap.Config.ARGB_8888);
             Utils.matToBitmap(laplacianImage8bit, bmp);
             int[] pixels = new int[bmp.getHeight() * bmp.getWidth()];
             bmp.getPixels(pixels, 0, bmp.getWidth(), 0, 0, bmp.getWidth(), bmp.getHeight());
@@ -82,7 +97,7 @@ public class RNOpenCvLibraryModule extends ReactContextBaseJavaModule {
                     maxLap = pixel;
             }
 
-//            int soglia = -6118750;
+            // int soglia = -6118750;
             int soglia = -8118750;
             if (maxLap <= soglia) {
                 System.out.println("is blur image");

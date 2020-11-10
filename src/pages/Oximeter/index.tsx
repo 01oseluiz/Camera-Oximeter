@@ -61,7 +61,9 @@ const Oximeter: React.FC = () => {
     });
 
     cameraRef?.resumePreview();
-    processVideo(video?.uri)
+    // Slice tira 'file://' para virar uma path ao invés de uri
+    // IMPORTANTE, NÃO REMOVA ESSE SLICE
+    processVideo(video?.uri.slice(7))
       .then((bpm) => console.log(bpm))
       .catch((error) => console.log(error));
 
