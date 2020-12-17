@@ -3,7 +3,11 @@ import { NativeModules } from 'react-native';
 const openCVFuncs = NativeModules.RNOpenCvLibrary;
 
 export interface IRunOximeter {
-  croppedImage: string
+  croppedImage: string,
+  croppedImageGray: string,
+  croppedImageR: string,
+  croppedImageG: string,
+  croppedImageB: string,
 }
 
 const runOximeter = async (imageAsBase64: string, leftEyePosition: Record<string, number>,

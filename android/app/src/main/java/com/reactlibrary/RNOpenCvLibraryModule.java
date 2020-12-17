@@ -98,6 +98,12 @@ public class RNOpenCvLibraryModule extends ReactContextBaseJavaModule {
     return ans;
   }
 
+  public Mat toGray(Mat img) {
+    Mat imageGray = new Mat();
+    Imgproc.cvtColor(img, imageGray, Imgproc.COLOR_BGR2GRAY);
+    return imageGray;
+  }
+
   public Mat cutImage(String imageAsBase64, ReadableMap leftEyePosition,
   ReadableMap rightEyePosition, ReadableMap origin, double viewScale, boolean flipImg) {
     int x, y, width, height;
@@ -133,8 +139,19 @@ public class RNOpenCvLibraryModule extends ReactContextBaseJavaModule {
       Mat croppedMat = this.cutImage(imageAsBase64, leftEyePosition, rightEyePosition, origin, viewScale, flipImg);
       this.saveImage(croppedMat);
 
+      // Convert to gray
+      Mat grayImg = this.toGray(croppedMat);
+
+      // Split RGB channels
+      ArrayList<Mat> RGBMat = new ArrayList<Mat>(3);
+      Core.split(croppedMat, RGBMat);
+
       // Add img as string base64 to be returned to react component
       map.putString("croppedImage", this.matToBase64(croppedMat));
+      map.putString("croppedImageGray", this.matToBase64(grayImg));
+      map.putString("croppedImageR", this.matToBase64(RGBMat.get(0)));
+      map.putString("croppedImageG", this.matToBase64(RGBMat.get(1)));
+      map.putString("croppedImageB", this.matToBase64(RGBMat.get(2)));
 
       successCallback.invoke(map);
     } catch (Exception e) {
