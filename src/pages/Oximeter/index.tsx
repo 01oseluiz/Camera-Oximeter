@@ -18,7 +18,7 @@ import Label from '../../components/Label';
 // import FacesLandmarks from './FacesLandmarks';
 import FacesForehead from './FacesForehead';
 
-import OpenCV from '../../NativeModules/OpenCV';
+import OpenCV, {IRunOximeter} from '../../NativeModules/OpenCV';
 
 // import { calcForeheadPosition } from './utils';
 
@@ -42,15 +42,7 @@ const Oximeter: React.FC = () => {
   const [type, setType] = useState(Camera.Constants.Type.front);
   const [facesDetected, setFacesDetected] = useState<IFaceProps[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-
-  /**
-   * Chronologically ordered array of bitmap frames with the most recent frames
-   * of the forehead. The quantity of frames it saves depends on neededFrames
-   * constant.
-   *
-   * @see neededFrames
-   */
-  const [recentFrames, setRecentFrames] = useState<Array<string>>([]);
+  const [oximeterData, setOximeterData] = useState<IRunOximeter>();
 
   setStatusBarHidden(true, 'slide');
 
@@ -66,19 +58,14 @@ const Oximeter: React.FC = () => {
       const currFace = facesDetected[0];
       const screenScale = img.width / Dimensions.get('screen').width;
 
-      const croppedImg = await OpenCV.cutImage(
+      setOximeterData(await OpenCV.runOximeter(
         img.base64 || '',
         currFace.leftEyePosition,
         currFace.rightEyePosition,
         currFace.bounds.origin,
         screenScale,
         type === Camera.Constants.Type.front,
-      );
-      // Add new image
-      recentFrames.push(croppedImg);
-      // Remove last one if enough images
-      if (recentFrames.length > neededFrames) recentFrames.shift();
-      setRecentFrames(recentFrames);
+      ));
     } catch (error) {
       /* eslint-disable no-console */
       console.log(error);
@@ -195,7 +182,7 @@ const Oximeter: React.FC = () => {
         </Camera>
         {/* {facesDetected.length > 0 && <FacesData facesDetected={facesDetected}/>} */}
         {/* {facesDetected.length > 0 && <FacesLandmarks facesDetected={facesDetected}/>} */}
-        {facesDetected.length > 0 && <FacesForehead facesDetected={facesDetected} lastForeheadBase64={recentFrames[recentFrames.length - 1]} />}
+        {facesDetected.length > 0 && <FacesForehead facesDetected={facesDetected} lastForeheadBase64={oximeterData?.croppedImage} />}
       </View>
     </View>
   );

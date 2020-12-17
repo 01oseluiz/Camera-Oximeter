@@ -5,6 +5,8 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.Arguments;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -12,6 +14,9 @@ import android.util.Base64;
 import java.io.ByteArrayOutputStream;
 import java.lang.Math;
 import java.util.Hashtable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -27,10 +32,13 @@ import android.util.Base64;
 public class RNOpenCvLibraryModule extends ReactContextBaseJavaModule {
 
   private final ReactApplicationContext reactContext;
+  private List<Mat> foreheadImages;
+  private Integer maxFrames = 30;
 
   public RNOpenCvLibraryModule(ReactApplicationContext reactContext) {
     super(reactContext);
     this.reactContext = reactContext;
+    this.foreheadImages = new ArrayList<Mat>();
   }
 
   @Override
@@ -49,6 +57,12 @@ public class RNOpenCvLibraryModule extends ReactContextBaseJavaModule {
     return image;
   }
 
+  private String matToBase64(Mat img) {
+    Bitmap CroppedImage = Bitmap.createBitmap(img.cols(), img.rows(), Bitmap.Config.ARGB_8888);
+    Utils.matToBitmap(img, CroppedImage);
+    return this.bitmapToBase64(CroppedImage);
+  }
+
   private String bitmapToBase64(Bitmap image) {
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     image.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
@@ -56,6 +70,13 @@ public class RNOpenCvLibraryModule extends ReactContextBaseJavaModule {
     return Base64.encodeToString(outputStream.toByteArray(), Base64.DEFAULT);
   }
 
+  private void saveImage(Mat img) {
+    if (this.foreheadImages.size() >= this.maxFrames) {
+      this.foreheadImages.remove(0);
+    }
+
+    this.foreheadImages.add(img);
+  }
 
   public Hashtable<String, Integer> calcForeheadPosition(ReadableMap leftEyePosition, ReadableMap rightEyePosition, ReadableMap origin, double viewScale)
   {
@@ -77,84 +98,45 @@ public class RNOpenCvLibraryModule extends ReactContextBaseJavaModule {
     return ans;
   }
 
+  public Mat cutImage(String imageAsBase64, ReadableMap leftEyePosition,
+  ReadableMap rightEyePosition, ReadableMap origin, double viewScale, boolean flipImg) {
+    int x, y, width, height;
+
+    Bitmap bitmapImg = this.base64ToBitmap(imageAsBase64);
+    Mat img = new Mat();
+    Utils.bitmapToMat(bitmapImg, img);
+
+    if (flipImg) {
+      Core.flip(img, img, 1);
+    }
+
+    Hashtable<String, Integer> forehead = calcForeheadPosition(leftEyePosition, rightEyePosition, origin, viewScale);
+
+    width = forehead.get("width");
+    height = forehead.get("height");
+    x = forehead.get("x");
+    y = forehead.get("y");
+
+    Rect rect = new Rect(x, y, width, height);
+    Mat croppedMat = img.submat(rect);
+    return croppedMat;
+  }
+
   @ReactMethod
-  public void cutImage(String imageAsBase64, ReadableMap leftEyePosition,
+  public void runOximeter(String imageAsBase64, ReadableMap leftEyePosition,
   ReadableMap rightEyePosition, ReadableMap origin, double viewScale, boolean flipImg,
   Callback errorCallback, Callback successCallback) {
     try {
+      WritableMap map = Arguments.createMap();
 
-      int x, y, width, height;
+      // Save current cropped image
+      Mat croppedMat = this.cutImage(imageAsBase64, leftEyePosition, rightEyePosition, origin, viewScale, flipImg);
+      this.saveImage(croppedMat);
 
-      Bitmap bitmapImg = this.base64ToBitmap(imageAsBase64);
-      Mat img = new Mat();
-      Utils.bitmapToMat(bitmapImg, img);
+      // Add img as string base64 to be returned to react component
+      map.putString("croppedImage", this.matToBase64(croppedMat));
 
-      if (flipImg) {
-        Core.flip(img, img, 1);
-      }
-
-      Hashtable<String, Integer> forehead = calcForeheadPosition(leftEyePosition, rightEyePosition, origin, viewScale);
-
-      width = forehead.get("width");
-      height = forehead.get("height");
-      x = forehead.get("x");
-      y = forehead.get("y");
-
-      Rect rect = new Rect(x, y, width, height);
-      Mat croppedMat = img.submat(rect);
-      Bitmap CroppedImage = Bitmap.createBitmap(croppedMat.cols(), croppedMat.rows(), Bitmap.Config.ARGB_8888);
-      Utils.matToBitmap(croppedMat, CroppedImage);
-
-      successCallback.invoke(this.bitmapToBase64(CroppedImage));
-    } catch (Exception e) {
-      errorCallback.invoke(e.getMessage());
-    }
-  }
-
-  public void checkForBlurryImage(String imageAsBase64, Callback errorCallback, Callback successCallback) {
-    try {
-      BitmapFactory.Options options = new BitmapFactory.Options();
-      options.inDither = true;
-      options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-
-      byte[] decodedString = Base64.decode(imageAsBase64, Base64.DEFAULT);
-      Bitmap image = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
-
-
-      // Bitmap image = decodeSampledBitmapFromFile(imageurl, 2000, 2000);
-      int l = CvType.CV_8UC1; //8-bit grey scale image
-      Mat matImage = new Mat();
-      Utils.bitmapToMat(image, matImage);
-      Mat matImageGrey = new Mat();
-      Imgproc.cvtColor(matImage, matImageGrey, Imgproc.COLOR_BGR2GRAY);
-
-      Bitmap destImage;
-      destImage = Bitmap.createBitmap(image);
-      Mat dst2 = new Mat();
-      Utils.bitmapToMat(destImage, dst2);
-      Mat laplacianImage = new Mat();
-      dst2.convertTo(laplacianImage, l);
-      Imgproc.Laplacian(matImageGrey, laplacianImage, CvType.CV_8U);
-      Mat laplacianImage8bit = new Mat();
-      laplacianImage.convertTo(laplacianImage8bit, l);
-
-      Bitmap bmp = Bitmap.createBitmap(laplacianImage8bit.cols(), laplacianImage8bit.rows(), Bitmap.Config.ARGB_8888);
-      Utils.matToBitmap(laplacianImage8bit, bmp);
-      int[] pixels = new int[bmp.getHeight() * bmp.getWidth()];
-      bmp.getPixels(pixels, 0, bmp.getWidth(), 0, 0, bmp.getWidth(), bmp.getHeight());
-      int maxLap = -16777216; // 16m
-      for (int pixel : pixels) {
-          if (pixel > maxLap)
-              maxLap = pixel;
-      }
-
-      // int soglia = -6118750;
-      int soglia = -8118750;
-      if (maxLap <= soglia) {
-          System.out.println("is blur image");
-      }
-
-      successCallback.invoke(maxLap <= soglia);
+      successCallback.invoke(map);
     } catch (Exception e) {
       errorCallback.invoke(e.getMessage());
     }

@@ -8,7 +8,7 @@ import styles from './styles';
 
 interface FacesForeheadProps {
   facesDetected: IFaceProps[],
-  lastForeheadBase64: string
+  lastForeheadBase64: string | undefined
 }
 
 const FacesLandmarks = (props: FacesForeheadProps): JSX.Element => {

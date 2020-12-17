@@ -2,17 +2,21 @@ import { NativeModules } from 'react-native';
 
 const openCVFuncs = NativeModules.RNOpenCvLibrary;
 
-const cutImage = async (imageAsBase64: string, leftEyePosition: Record<string, number>,
+export interface IRunOximeter {
+  croppedImage: string
+}
+
+const runOximeter = async (imageAsBase64: string, leftEyePosition: Record<string, number>,
   rightEyePosition: Record<string, number>,
   origin: Record<string, number>,
-  viewScale = 1, flipImg: boolean) : Promise<string> => new Promise((resolve, reject) => {
-  openCVFuncs.cutImage(imageAsBase64, leftEyePosition, rightEyePosition, origin, viewScale, flipImg, (error: unknown) => {
+  viewScale = 1, flipImg: boolean) : Promise<IRunOximeter> => new Promise((resolve, reject) => {
+  openCVFuncs.runOximeter(imageAsBase64, leftEyePosition, rightEyePosition, origin, viewScale, flipImg, (error: unknown) => {
     reject(error);
-  }, (msg: string) => {
+  }, (msg: IRunOximeter) => {
     resolve(msg);
   });
 });
 
 export default {
-  cutImage,
+  runOximeter,
 };
